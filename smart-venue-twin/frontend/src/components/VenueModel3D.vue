@@ -10,6 +10,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { ZONES } from '../utils/constants'
 
 const containerRef = ref(null)
+const webglSupported = ref(true)
 
 // Three.js核心对象
 let scene = null
@@ -24,55 +25,71 @@ const zoneMeshes = []
  * 初始化Three.js场景
  */
 function initScene() {
-  const container = containerRef.value
-  if (!container) return
+  try {
+    const container = containerRef.value
+    if (!container) return
 
-  const width = container.clientWidth
-  const height = container.clientHeight
+    const width = container.clientWidth
+    const height = container.clientHeight
 
-  // 创建场景
-  scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0x0a0e27, 0.02)
+    // 创建场景
+    scene = new THREE.Scene()
+    scene.fog = new THREE.FogExp2(0x0a0e27, 0.02)
 
-  // 创建相机
-  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-  camera.position.set(12, 10, 12)
-  camera.lookAt(0, 0, 0)
+    // 创建相机
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
+    camera.position.set(12, 10, 12)
+    camera.lookAt(0, 0, 0)
 
-  // 创建渲染器
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-  })
-  renderer.setSize(width, height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  renderer.setClearColor(0x000000, 0)
-  container.appendChild(renderer.domElement)
+    // 创建渲染器
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    })
+    renderer.setSize(width, height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setClearColor(0x000000, 0)
+    container.appendChild(renderer.domElement)
 
-  // 轨道控制器
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.05
-  controls.autoRotate = true
-  controls.autoRotateSpeed = 0.5
-  controls.maxPolarAngle = Math.PI / 2.2
-  controls.minDistance = 5
-  controls.maxDistance = 30
+    // 轨道控制器
+    controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.05
+    controls.autoRotate = true
+    controls.autoRotateSpeed = 0.5
+    controls.maxPolarAngle = Math.PI / 2.2
+    controls.minDistance = 5
+    controls.maxDistance = 30
 
-  // 添加灯光
-  setupLights()
+    // 添加灯光
+    setupLights()
 
-  // 添加场馆模型
-  createVenueModel()
+    // 添加场馆模型
+    createVenueModel()
 
-  // 添加地面网格
-  createGroundGrid()
+    // 添加地面网格
+    createGroundGrid()
 
-  // 添加粒子背景
-  createParticles()
+    // 添加粒子背景
+    createParticles()
 
-  // 启动渲染循环
-  animate()
+    // 启动渲染循环
+    animate()
+  } catch (e) {
+    console.warn('WebGL初始化失败:', e)
+    webglSupported.value = false
+    // 清理可能已创建的部分资源
+    if (renderer) {
+      renderer.dispose()
+      renderer = null
+    }
+    if (controls) {
+      controls.dispose()
+      controls = null
+    }
+    scene = null
+    camera = null
+  }
 }
 
 /**
@@ -245,6 +262,8 @@ function createParticles() {
  * 渲染循环
  */
 function animate() {
+  if (!renderer || !scene || !camera) return
+
   animationId = requestAnimationFrame(animate)
 
   // 更新控制器
@@ -263,7 +282,7 @@ function animate() {
   }
 
   // 渲染
-  renderer?.render(scene, camera)
+  renderer.render(scene, camera)
 }
 
 /**
@@ -323,11 +342,19 @@ onUnmounted(() => {
   }
 
   camera = null
+  zoneMeshes.length = 0
 })
 </script>
 
 <template>
-  <div ref="containerRef" class="venue-model-3d" />
+  <div v-if="webglSupported" ref="containerRef" class="venue-model-3d" />
+  <div v-else class="venue-model-3d-fallback">
+    <div class="fallback-content">
+      <span class="fallback-icon">🏟️</span>
+      <p class="fallback-title">3D模型需要WebGL支持</p>
+      <p class="fallback-subtitle">请在支持WebGL的浏览器中查看</p>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -337,5 +364,38 @@ onUnmounted(() => {
   min-height: 300px;
   position: relative;
   overflow: hidden;
+}
+
+.venue-model-3d-fallback {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0d1135 0%, #0a0e27 100%);
+  border-radius: 8px;
+}
+
+.fallback-content {
+  text-align: center;
+}
+
+.fallback-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.fallback-title {
+  font-size: 16px;
+  color: #e0e6ff;
+  margin: 0 0 8px 0;
+}
+
+.fallback-subtitle {
+  font-size: 13px;
+  color: #6b7394;
+  margin: 0;
 }
 </style>
