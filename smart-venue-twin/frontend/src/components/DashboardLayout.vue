@@ -86,6 +86,14 @@ onMounted(() => {
       chartEntrance('.center-panel', { delay: 0.4 })
     }, 100)
   }
+
+  // 强制触发重绘，修复沙箱环境渲染异常
+  requestAnimationFrame(() => {
+    document.body.style.transform = 'translateZ(0)'
+    requestAnimationFrame(() => {
+      document.body.style.transform = ''
+    })
+  })
 })
 
 onUnmounted(() => {
@@ -259,7 +267,6 @@ function updateScale() {
   justify-content: center;
   background: #0a0e27;
   overflow: hidden;
-  border: 4px solid #00f0ff;
 }
 
 .screen-wrapper {
@@ -269,11 +276,7 @@ function updateScale() {
   position: relative;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(77, 124, 255, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 0%, rgba(0, 212, 170, 0.02) 0%, transparent 40%),
-    var(--bg-primary);
+  background: var(--bg-primary);
 }
 
 /* ==================== 顶部标题栏 ==================== */
@@ -319,7 +322,8 @@ function updateScale() {
   background: var(--accent-cyan);
   border-radius: 50%;
   box-shadow: 0 0 10px var(--accent-cyan);
-  animation: breathe 2s ease-in-out infinite;
+  /* 呼吸动画在部分环境导致渲染异常，暂时禁用 */
+  /* animation: breathe 2s ease-in-out infinite; */
 }
 
 .header-subtitle {
@@ -511,7 +515,8 @@ function updateScale() {
   display: flex;
   gap: 60px;
   white-space: nowrap;
-  animation: scrollLeft 60s linear infinite;
+  /* 滚动动画在部分环境导致渲染异常，暂时禁用 */
+  /* animation: scrollLeft 60s linear infinite; */
 }
 
 .scroll-message {
