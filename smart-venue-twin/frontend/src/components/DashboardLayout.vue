@@ -20,12 +20,16 @@ import { useWebSocket } from '../composables/useWebSocket'
 import { useGSAP } from '../composables/useGSAP'
 import { useNumberRoll } from '../composables/useNumberRoll'
 import { formatDate } from '../utils/format'
+import { isWebGLAvailable } from '../utils/webgl'
 
 // WebSocket实时数据
 const { visitorCount, equipmentAlerts, revenueTick, trafficDensity, connected, connect } = useWebSocket()
 
 // GSAP动画
 const { staggerEntrance, chartEntrance, countUp } = useGSAP()
+
+// WebGL支持检测
+const webglSupported = ref(false)
 
 // 实时时钟
 const currentTime = ref('')
@@ -52,12 +56,19 @@ const scrollMessages = ref([
 
 // 模拟初始数据加载
 onMounted(() => {
+  // 检测WebGL支持（必须在任何WebGL组件渲染前执行）
+  webglSupported.value = isWebGLAvailable()
+
   // 连接WebSocket
   connect()
 
   // 启动时钟
   updateClock()
   clockTimer = setInterval(updateClock, 1000)
+
+  // 大屏自适应缩放
+  updateScale()
+  window.addEventListener('resize', updateScale)
 
   // 模拟KPI数据加载（后续由API替换）
   setTimeout(() => {
@@ -67,12 +78,14 @@ onMounted(() => {
     alertCount.setValue(3)
   }, 500)
 
-  // 入场动画
-  setTimeout(() => {
-    staggerEntrance('.left-panel .glass-panel', { stagger: 0.2, delay: 0.3 })
-    staggerEntrance('.right-panel .glass-panel', { stagger: 0.2, delay: 0.6 })
-    chartEntrance('.center-panel', { delay: 0.4 })
-  }, 100)
+  // 入场动画（WebGL可用时启用以验证）
+  if (webglSupported.value) {
+    setTimeout(() => {
+      staggerEntrance('.left-panel .glass-panel', { stagger: 0.2, delay: 0.3 })
+      staggerEntrance('.right-panel .glass-panel', { stagger: 0.2, delay: 0.6 })
+      chartEntrance('.center-panel', { delay: 0.4 })
+    }, 100)
+  }
 })
 
 onUnmounted(() => {
@@ -80,6 +93,7 @@ onUnmounted(() => {
     clearInterval(clockTimer)
     clockTimer = null
   }
+  window.removeEventListener('resize', updateScale)
 })
 
 /**
@@ -100,20 +114,11 @@ function updateScale() {
   const scaleY = window.innerHeight / 1080
   scale.value = Math.min(scaleX, scaleY)
 }
-
-onMounted(() => {
-  updateScale()
-  window.addEventListener('resize', updateScale)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateScale)
-})
 </script>
 
 <template>
   <div class="dashboard-wrapper">
-    <div class="screen-wrapper" :style="{ transform: `scale(${scale})` }">
+    <div class="screen-wrapper">
       <!-- ==================== 顶部标题栏 ==================== -->
       <header class="dashboard-header">
         <div class="header-left">
@@ -191,12 +196,20 @@ onUnmounted(() => {
         <!-- ===== 中央3D模型区 ===== -->
         <div class="center-panel">
           <GlassPanel title="场馆数字孪生" class="model-panel" :bordered="true" :glow="true">
-            <VenueModel3D />
+            <VenueModel3D v-if="webglSupported" />
+            <div v-else class="webgl-fallback">
+              <span class="webgl-fallback__icon">🏟️</span>
+              <p class="webgl-fallback__text">3D模型需要WebGL支持</p>
+            </div>
           </GlassPanel>
 
           <!-- 中央底部飞线图 -->
           <GlassPanel title="客流流向" class="flyline-panel">
-            <FlyLineChart />
+            <FlyLineChart v-if="webglSupported" />
+            <div v-else class="webgl-fallback">
+              <span class="webgl-fallback__icon">📊</span>
+              <p class="webgl-fallback__text">飞线图需要WebGL支持</p>
+            </div>
           </GlassPanel>
         </div>
 
@@ -244,14 +257,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-primary);
+  background: #0a0e27;
   overflow: hidden;
+  border: 4px solid #00f0ff;
 }
 
 .screen-wrapper {
-  width: 1920px;
-  height: 1080px;
-  transform-origin: center center;
+  width: 100vw;
+  height: 100vh;
+  transform-origin: left top;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -515,5 +529,27 @@ onUnmounted(() => {
   100% {
     transform: translateX(-50%);
   }
+}
+
+/* WebGL不可用时的降级占位 */
+.webgl-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: #6b7394;
+  gap: 8px;
+}
+
+.webgl-fallback__icon {
+  font-size: 36px;
+  opacity: 0.6;
+}
+
+.webgl-fallback__text {
+  font-size: 13px;
+  margin: 0;
 }
 </style>

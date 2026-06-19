@@ -125,15 +125,7 @@ a:hover {
   color: #fff;
 }
 
-/* 大屏自适应缩放 */
-.screen-wrapper {
-  width: 1920px;
-  height: 1080px;
-  transform-origin: left top;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
+/* 大屏自适应缩放 - 由 DashboardLayout 组件内部处理，不在此处全局定义 */
 
 /* 通用工具类 */
 .text-cyan {
