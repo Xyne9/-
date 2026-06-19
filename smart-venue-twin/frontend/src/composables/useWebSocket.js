@@ -5,8 +5,8 @@
 import { ref, onUnmounted, readonly } from 'vue'
 import { WS_MESSAGE_TYPES } from '../utils/constants'
 
-// WebSocket连接URL
-const WS_URL = 'ws://localhost:8000/ws/realtime'
+// WebSocket连接URL - 使用相对路径，由Vite代理转发到后端
+const WS_URL = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws/realtime`
 
 // 重连配置
 const RECONNECT_DELAY = 3000 // 重连延迟3秒
