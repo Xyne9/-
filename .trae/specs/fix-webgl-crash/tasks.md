@@ -9,11 +9,12 @@
 - [x] Task 2: 修复 FlyLineChart.vue echarts-gl 异常
   - [x] 2.1: 在 echarts.init/setOption 处添加 try-catch
   - [x] 2.2: echarts-gl 初始化失败时降级为 2D 直角坐标系飞线图
-  - [x] 2.3: 3D模式改用 grid3D 坐标系，不依赖 geo3D 地图数据
+  - [x] 2.3: 3D模式改用 grid3D/cartesian3D 坐标系，不依赖 geo3D 地图数据
 
 - [x] Task 3: 验证修复效果
   - [x] 3.1: 确认页面在无 WebGL 环境下不再白屏
   - [x] 3.2: 确认所有非 WebGL 组件正常渲染
+  - [x] 3.3: Vite build 通过，无编译错误
 
 # Task Dependencies
 - Task 2 依赖 Task 1（先修复最关键的 3D 模型崩溃）

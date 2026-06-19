@@ -3,4 +3,5 @@
 - [x] FlyLineChart.vue 中 echarts-gl 初始化被 try-catch 包裹
 - [x] FlyLineChart.vue 在 WebGL 不可用时降级为 2D 图表或显示提示
 - [x] 页面在无 WebGL 环境下不再白屏，所有非 WebGL 组件正常渲染
-- [x] 页面在有 WebGL 环境下行为与修复前一致（3D 模式改用 grid3D 坐标系，不再依赖 geo3D 地图数据）
+- [x] 页面在有 WebGL 环境下行为与修复前一致（3D 模式改用 grid3D/cartesian3D 坐标系，不再依赖 geo3D 地图数据）
+- [x] Vite build 通过，无编译错误
