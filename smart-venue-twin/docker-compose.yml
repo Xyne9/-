@@ -1,0 +1,73 @@
+# ============================================================
+# 智慧场馆数字孪生平台 - Docker Compose 编排配置
+# 服务：backend（FastAPI后端）+ frontend（Nginx+Vue前端）
+# ============================================================
+
+version: "3.8"
+
+services:
+  # ============================================================
+  # 后端服务 - FastAPI + Uvicorn
+  # ============================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: smart-venue-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # 数据目录（容器内路径）
+      - DATA_DIR=/app/data/raw
+      # Python优化
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # 挂载数据目录（持久化 + 方便更新数据）
+      - venue-data:/app/data/raw
+    networks:
+      - venue-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  # ============================================================
+  # 前端服务 - Nginx 托管 Vue 静态文件 + 反向代理API
+  # ============================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: smart-venue-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - venue-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+# ============================================================
+# 数据卷 - 持久化存储模拟数据
+# ============================================================
+volumes:
+  venue-data:
+    driver: local
+
+# ============================================================
+# 网络 - 前后端通信
+# ============================================================
+networks:
+  venue-network:
+    driver: bridge
